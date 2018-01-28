@@ -187,6 +187,8 @@ class Channel(ChannelState):
             transdetail[1]["deposit"] = int(self.receiver_deposit)
             delta = int(self.receiver_deposit) - int(receiver_deposit)
             receiver_balance = self.get_address_balance(self.receiver, channels) + delta
+            if count > receiver_balance:
+                raise NoBalanceEnough
             transdetail[1]["trans"] = int(count)
             receiver_balance += int(count)
             transdetail[1]["balance"] = receiver_balance
