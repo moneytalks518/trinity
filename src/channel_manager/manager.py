@@ -3,10 +3,6 @@ import logging
 from  channel_manager.channel import Channel, State, get_channelnames_via_address
 from  channel_manager import blockchain
 from utils.channel import split_channel_name
-from channel_manager.state import ChannelDatabase, ChannelFile, ChannelState, ChannelAddress
-from exception import ChannelExist, NoChannelFound, ChannelNotInOpenState,ChannelFileNoExist,ChannelExistInDb
-from utils.common import CommonItem
-from utils.channel import split_channel_name
 from configure import Configure
 
 Contract_addr = Configure["ContractAddr"]

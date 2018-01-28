@@ -1,14 +1,13 @@
-from sqlalchemy import Column, String, create_engine, Integer, Float, BigInteger
+from sqlalchemy import Column, String, create_engine, Integer, Float, BigInteger, Text
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
-import os
-import hashlib
-from crypto import crypto_channel, uncryto_channel
+from configure import Configure
 from exception import ChannelDBAddFail, ChannelDBUpdateFail, ChannelExist, QureyRoleNotCorrect
+import json
 
 Base = declarative_base()
 
-DATABASE_PAHT = "/tmp/test.db"
+DATABASE_PAHT = Configure["DBFile"]
 
 
 class ChannelAddrDataBase(Base):
@@ -85,6 +84,7 @@ class ChannelDatabase(Base):
     settle_timeout = Column(Integer())
     sender_deposit_cache = Column(Float())
     receiver_deposit_cache = Column(Float())
+    tx_info = Column(Text())
 
 
 engine = create_engine('sqlite:///'+DATABASE_PAHT)
@@ -157,7 +157,7 @@ class ChannelState(object):
                                         open_block_number=open_block_number, settle_timeout = settle_timeout,
                                         sender_deposit_cache=sender_deposit_cache,
                                         receiver_deposit_cache=receiver_deposit_cache,
-                                        start_block_number=start_block_number)
+                                        start_block_number=start_block_number, tx_info = "")
         try:
             Session.add(channel_state)
             Session.commit()
@@ -213,38 +213,43 @@ class ChannelState(object):
             raise
         return None
 
-
-class ChannelFile(object):
-    """
-
-    """
-    PATH = os.path.dirname(__file__)
-
-
-    @property
-    def channel_file_name(self):
-        return "{}.data".format(os.path.join(self.PATH, self.channel_name))
-
     def create_channelfile(self, **kwargs):
-        if os.path.exists(self.channel_file_name):
-            raise ChannelExist
+        json_str = json.dumps(kwargs)
+        ch = Session.query(ChannelDatabase).filter(ChannelDatabase.channel_name == self.channelname).one()
+        if ch:
+            ch.tx_info = json_str
+            Session.commit()
+            return True
         else:
-            self.update_channel(**kwargs)
+            return False
+
 
     def update_channel(self, **kwargs):
-        with open(self.channel_file_name,"ab+") as f:
-            crypto_channel(f, **kwargs)
-        return None
+        ch = Session.query(ChannelDatabase).filter(ChannelDatabase.channel_name == self.channelname).one()
+        if ch:
+            info = ch.tx_info
+            json_str = json.dumps(kwargs)
+            info = info+"#"*10+json_str
+            ch.tx_info = info
+            Session.commit()
+            return True
+        else:
+            return False
+
 
     def read_channel(self):
-        with open(self.channel_file_name,"rb") as f:
-            return uncryto_channel(f)
+        ch = Session.query(ChannelDatabase).filter(ChannelDatabase.channel_name == self.channelname).one()
+        if ch:
+            info = ch.tx_info
+            info_list = info.split("#"*10)
+            return [json.loads(i) for i in info_list]
+        else:
+            return False
 
-    def delete_channel(self):
-        return os.remove(self.channel_file_name)
 
     def has_channel_file(self):
-        return os.path.exists(self.channel_file_name)
+        ch = Session.query(ChannelDatabase).filter(ChannelDatabase.channel_name == self.channelname).one()
+        return True if ch else False
 
 
 def query_channel_from_address(address, role="both"):

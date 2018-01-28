@@ -1,5 +1,5 @@
 import time
-from channel_manager.state import ChannelFile, ChannelState, query_channel_from_address
+from channel_manager.state import ChannelState, query_channel_from_address
 from enum import IntEnum
 from exception import (
     ChannelFileNoExist,
@@ -30,7 +30,7 @@ def check_channel_exist(func):
         return wrapper
 
 
-class Channel(ChannelFile, ChannelState):
+class Channel(ChannelState):
     """
 
     """
@@ -78,15 +78,12 @@ class Channel(ChannelFile, ChannelState):
             raise ChannleNotInCloseState
         else:
             self.delete_channle_in_database()
-            self.delete_channel()
-
 
     def close(self):
         if self.state_in_database == State.SETTLING:
             raise ChannelSettling
         else:
             try:
-                self.delete_channel()
                 self.delete_channle_in_database()
             except:
                 return False

@@ -67,7 +67,6 @@ def depoist_out(address,value):
         sender, receiver = split_channel_name(channel_name)
         ch = Channel(sender, receiver)
         ch.delete_channle_in_database()
-        ch.delete_channel()
     else:
         return None
     return address
