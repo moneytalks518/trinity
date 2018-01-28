@@ -238,7 +238,7 @@ class ChannelState(object):
 
 
     def read_channel(self):
-        ch = Session.query(ChannelDatabase).filter(ChannelDatabase.channel_name == self.channelname).one()
+        ch = self.match
         if ch:
             info = ch.tx_info
             info_list = info.split("#"*10)
