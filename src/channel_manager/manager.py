@@ -64,11 +64,11 @@ def get_channel_state(address):
     channels = get_channelnames_via_address(address)
     for channel in channels:
         ch = Channel(channel.sender, channel.receiver)
-        channel_detail = [{"address": ch.sender,
-                           "deposit": ch.sender_deposit,
+        channel_detail = [{"address": channel.sender,
+                           "deposit": channel.sender_deposit,
                            "balance": ch.get_address_balance(ch.sender)},
-                          {"address": ch.receiver,
-                           "deposit": ch.receiver_deposit,
+                          {"address": channel.receiver,
+                           "deposit": channel.receiver_deposit,
                            "balance": ch.get_address_balance(ch.receiver)}
                           ]
         channel_info  = {
