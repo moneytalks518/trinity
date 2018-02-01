@@ -197,7 +197,7 @@ def tx_onchain(from_addr, to_addr, asset_type, value):
     return blockchain.tx_onchain(from_addr, to_addr, asset_type.upper(), value)
 
 
-def depositin(adddress, value):
+def depositin(address, value):
     print("depost_in", address)
     channels = get_channelnames_via_address(address)
     print(channels)
