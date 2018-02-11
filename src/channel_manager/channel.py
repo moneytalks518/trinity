@@ -26,6 +26,7 @@ import time
 from channel_manager import blockchain
 from channel_manager.state import ChannelFile, ChannelState, query_channel_from_address
 from enum import IntEnum
+from configure import Configure
 from exception import (
     ChannelFileNoExist,
     ChannelExistInDb,
@@ -45,6 +46,7 @@ class State(IntEnum):
     SETTLING = 3
     SETTLED = 4
     CLOSED = 5
+    UPDATING = 6
 
 def check_channel_exist(func):
         def wrapper(self, *args, **kwargs):
@@ -122,9 +124,9 @@ class Channel(ChannelFile, ChannelState):
         return self.get_address_balance(self.receiver)
 
     def settle_banlace_onblockchain(self):
-        return blockchain.distribute_balance(address=self.sender, asset_type="TNC",
+        return blockchain.tx_onchain(from_addr=Configure["ContractAddr"], to_addr=self.sender, asset_type="TNC",
                                              value=self.sender_balance) \
-               and blockchain.distribute_balance(address=self.receiver, asset_type="TNC",
+               and blockchain.tx_onchain(from_addr=Configure["ContractAddr"],to_addr=self.receiver, asset_type="TNC",
                                                  value=self.receiver_balance)
 
     def get_address_balance(self, address, channels = None):
@@ -184,7 +186,9 @@ class Channel(ChannelFile, ChannelState):
             sender_deposit = self.get_address_deposit(self.sender, channels)
             transdetail[0]["deposit"] = float(self.sender_deposit)
             delta = float(self.sender_deposit) - float(sender_deposit)
+            print(delta)
             sender_balance = self.get_address_balance(self.sender, channels) + delta
+            print(self.sender, sender_balance)
             if count > sender_balance:
                 raise NoBalanceEnough
             else:
@@ -277,31 +281,37 @@ class Channel(ChannelFile, ChannelState):
         return self.channel_name
 
     def set_channel_open(self):
-        print("set_channel_open")
+        print("set_channel_open", self.channelname)
         if not self.has_channel():
-            return "No channel find"
+            print("No channel find")
         else:
             tx_id = self.channel_txid
             sender_balance = self.get_address_balance(self.sender)
             receiver_balance = self.get_address_balance(self.receiver)
+            print(self.sender_deposit_cache)
+            print(self.sender_deposit)
+
             tx_detail = [
                 {"address": self.sender,
-                 "deposit": self.sender_deposit,
+                 "deposit": self.sender_deposit + self.sender_deposit_cache,
                  "trans": 0,
                  "balance": sender_balance + self.sender_deposit_cache,
 
                  },
                 {"address": self.receiver,
-                 "deposit": self.receiver_deposit,
+                 "deposit": self.receiver_deposit + self.receiver_deposit_cache,
                  "trans": 0,
                  "balance": receiver_balance + self.receiver_deposit_cache,
                  }
             ]
             trans_info = {"tx_id": str(int(tx_id)+ 1), "tx_detail": tx_detail}
             self.update_channel(**trans_info)
-        self.update_channel_state(State.OPEN)
-        self.update_deposit_cache(sender_deposit_cache=0, receiver_deposit_cache=0)
-        return "SUCCESS"
+            self.update_channel_deposit(sender_deposit=self.sender_deposit + self.sender_deposit_cache,
+                                        receiver_deposit=self.receiver_deposit + self.receiver_deposit_cache)
+            self.update_channel_state(State.OPEN)
+            self.update_deposit_cache(sender_deposit_cache=0, receiver_deposit_cache=0)
+
+            return "SUCCESS"
 
 
 def get_channelnames_via_address(address):

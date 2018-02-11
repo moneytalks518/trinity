@@ -71,34 +71,41 @@ def sc_notify(event):
 
 
 def depoist_in(address, value):
-    print("depost in")
+    print("depost_in", address)
     channels = get_channelnames_via_address(address)
+    print(channels)
     success_channel = []
     for channel in channels:
         print(channel.channel_name)
         sender, receiver = split_channel_name(channel.channel_name)
         ch = Channel(sender, receiver)
-        if address == sender and value == ch.sender_deposit_cache:
+        #if address == sender and value == ch.sender_deposit_cache:
+        if address == sender:
             ch.set_channel_open()
             success_channel.append(channel.channel_name)
-        elif address == receiver and value == ch.receiver_deposit_cache:
+        #elif address == receiver and value == ch.receiver_deposit_cache:
+        elif address == receiver:
             ch.set_channel_open()
             success_channel.append(channel.channel_name)
         else:
-            return None
-    print(success_channel)
-    return success_channel
+            continue
+    print("depost in",success_channel)
+
 
 
 def depoist_out(address,value):
-    channel_name = get_channelnames_via_address(address)
-    if channel_name:
-        sender, receiver = split_channel_name(channel_name)
-        ch = Channel(sender, receiver)
-        ch.close()
-    else:
-        return None
-    return address
+    print("deposit_out", address)
+    channels = get_channelnames_via_address(address)
+    success_channel = []
+    for channel in channels:
+        if channel.state == State.SETTLING.value:
+            sender, receiver = split_channel_name(channel.channel_name)
+            ch = Channel(sender, receiver)
+            ch.close()
+            success_channel.append(channel.channel_name)
+        else:
+            continue
+        print("depost out", success_channel)
 
 
 def custom_background_code():
